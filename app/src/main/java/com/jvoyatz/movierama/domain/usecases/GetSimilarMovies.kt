@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.flow
 import java.lang.Exception
 
 class GetSimilarMovies(val moviesRepository: MoviesRepository) {
-    operator fun invoke(movieId: Int, page: Int = 0): Flow<Resource<SimilarMovies>> {
-        return moviesRepository.getSimilarMoviesById(movieId, page)
+    operator fun invoke(movieId: Int): Flow<Resource<SimilarMovies>> {
+        return moviesRepository.getSimilarMoviesById(movieId)
     }
 }

@@ -6,4 +6,5 @@ class UseCases(
     val getMovieDetails: GetMovieDetails,
     val getSimilarMovies: GetSimilarMovies,
     val getMovieReviews: GetMovieReviews,
+    val resetSearchQuery: ResetSearchQuery,
 )

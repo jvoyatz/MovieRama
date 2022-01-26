@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.onStart
 
 
 class GetPopularMovies(private val moviesRepository: MoviesRepository) {
-    operator fun invoke(page: Int = 1): Flow<Resource<MovieResults>> {
-        return moviesRepository.getPopularMovies(page)
-            .onStart { emit(Resource.Loading) }
+    operator fun invoke(): Flow<Resource<MovieResults>> {
+        return moviesRepository.getPopularMovies()
+            //.onStart { emit(Resource.Loading) }
     }
 }

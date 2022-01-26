@@ -45,7 +45,7 @@ class MoviesViewModel @Inject constructor(private val useCases: UseCases): ViewM
             }
             .onStart {
                 emit(Resource.Loading)
-                delay(1000)
+                delay(500)
             }
             .collect {
                 _moviesState.value = it
@@ -53,17 +53,37 @@ class MoviesViewModel @Inject constructor(private val useCases: UseCases): ViewM
         }
     }
 
+    fun getMoviesNextPage(){
+
+        if(movieSearchStateFlow.value.isEmpty()){
+            getPopularMovies()
+        }else{
+            searchForMovies(movieSearchStateFlow.value)
+        }
+    }
 
     fun getPopularMovies(){
         viewModelScope.launch {
             useCases.getPopularMovies()
-                .onStart {
+                /*.onStart {
                     emit(Resource.Loading)
+                }*/
+                .onStart { delay(450)}
+                .collect { newState ->
+                    _moviesState.value = newState
                 }
-                .collect {
-                    it.let {
-                        _moviesState.value = it
-                    }
+        }
+    }
+
+    fun searchForMovies(query: String) {
+        viewModelScope.launch {
+            useCases.searchForMovies(query)
+                /*.onStart {
+                    emit(Resource.Loading)
+                }*/
+                .onStart { delay(450)}
+                .collect { newState ->
+                    _moviesState.value = newState
                 }
         }
     }
@@ -71,16 +91,21 @@ class MoviesViewModel @Inject constructor(private val useCases: UseCases): ViewM
     fun getMovieDetails(id: Int){
         viewModelScope.launch {
             useCases.getMovieDetails(id)
-                //.onStart {//SHOW LOADING}
+                //.onStart { delay(450)}
                 .collectLatest{
                     _moviesDetailsResponse.value = it
                 }
         }
     }
 
-    fun searchForMovies(query: String?) {
+    fun setSearchMoviesQuery(query: String?) {
         query?.let {
             movieSearchStateFlow.value = it
+        } ?: run {
+            useCases.resetSearchQuery()
+            movieSearchStateFlow.value = ""
         }
     }
+
+    fun isMoviesLoading(): Boolean = moviesState.value is Resource.Loading
 }

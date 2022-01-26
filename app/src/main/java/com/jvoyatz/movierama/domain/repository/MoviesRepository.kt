@@ -8,9 +8,10 @@ import com.jvoyatz.movierama.domain.models.SimilarMovies
 import kotlinx.coroutines.flow.Flow
 
 interface MoviesRepository{
-    fun getPopularMovies(page: Int = 1): Flow<Resource<MovieResults>>
-    fun searchMovies(query: String, page: Int = 1):Flow<Resource<MovieResults>>
+    fun getPopularMovies(): Flow<Resource<MovieResults>>
+    fun searchMovies(query: String):Flow<Resource<MovieResults>>
     fun getMovieById(id:Int):Flow<Resource<MovieDetails>>
-    fun getSimilarMoviesById(id:Int, page: Int = 1):Flow<Resource<SimilarMovies>>
-    fun getReviewsById(id: Int, page: Int=0):Flow<Resource<MovieReviews>>
+    fun getSimilarMoviesById(id:Int):Flow<Resource<SimilarMovies>>
+    fun getReviewsById(id: Int):Flow<Resource<MovieReviews>>
+    fun resetSearchQuery()
 }

@@ -1,6 +1,5 @@
 package com.jvoyatz.movierama.data.network.dto
 
-import android.util.Log
 import com.jvoyatz.movierama.common.IMG_URL_BG
 import com.jvoyatz.movierama.common.IMG_URL_POSTER
 import com.jvoyatz.movierama.domain.models.*
@@ -18,12 +17,10 @@ data class MoviesDTO(
 )
 
 private const val TAG = "MoviesDTO"
-fun MoviesDTO.toDomain():MovieResults{
+fun MoviesDTO.toDomain(previousResults: List<Movie> = listOf()):MovieResults{
     return MovieResults(
         this.page,
-        this.results.map {
-            it.toDomain()
-        },
+        previousResults + this.results.map { it.toDomain() },
         this.totalPages,
         this.totalResults
     )
@@ -216,7 +213,7 @@ data class ProductionCompanyDTO(
     @Json(name = "id")
     val id: Int = 0,
     @Json(name = "logo_path")
-    val logoPath: String = "",
+    val logoPath: String? = "",
     @Json(name = "name")
     val name: String = "",
     @Json(name = "origin_country")

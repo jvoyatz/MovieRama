@@ -89,7 +89,8 @@ class AppModule {
             SearchForMovies(moviesRepository),
             GetMovieDetails(moviesRepository),
             GetSimilarMovies(moviesRepository),
-            GetMovieReviews(moviesRepository)
+            GetMovieReviews(moviesRepository),
+            ResetSearchQuery(moviesRepository)
         )
     }
 }

@@ -7,11 +7,14 @@ import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType
 
 
 data class MovieResults(
-    val page: Int = 0,
-    val results: List<Movie> = listOf(),
-    val totalPages: Int = 0,
-    val totalResults: Int = 0
-)
+    var page: Int = 0,
+    var results: List<Movie> = listOf(),
+    val totalPages: Int = 1,
+    val totalResults: Int = 0,
+    val backedResults: MutableList<Movie> = results.toMutableList()
+) {
+    val query = ""
+}
 
 @Parcelize
 data class Movie(

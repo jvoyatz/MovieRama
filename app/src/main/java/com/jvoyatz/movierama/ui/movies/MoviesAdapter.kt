@@ -1,7 +1,9 @@
 package com.jvoyatz.movierama.ui.movies
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.navigation.fragment.DialogFragmentNavigatorDestinationBuilder
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -13,6 +15,7 @@ import com.jvoyatz.movierama.domain.models.Movie
 import com.jvoyatz.movierama.ui.*
 import kotlinx.coroutines.*
 
+private const val TAG = "MoviesAdapter"
 class MoviesAdapter(
     val scope: CoroutineScope,
     val clickListener: (Movie) -> Unit): ListAdapter<MovieItem, RecyclerView.ViewHolder>(MovieDiffCallback()){
@@ -68,18 +71,58 @@ class MoviesAdapter(
         submitList(listOf(MovieItem.Loading))
     }
 
-    fun submit(list: List<Movie>){
+    fun submitLoadingMore() {
         scope.launch {
-            delay(750)
-            val items: List<MovieItem> = when {
-                list.isNullOrEmpty() -> listOf(MovieItem.Header)
-                else -> listOf(MovieItem.Header) + list.map { MovieItem.Data(it) }
-            }
+            val mutableCurrentList = currentList.toMutableList()
+            mutableCurrentList.removeIf { it.id == LOADING }
+            val items: List<MovieItem> =
+                mutableCurrentList + listOf(MovieItem.Loading)
+
             withContext(Dispatchers.Main){
                 submitList(items)
             }
         }
     }
+
+    fun submit(list: List<Movie> = listOf()){
+        scope.launch {
+            delay(250)
+            val mutableCurrentList = currentList.toMutableList()
+            mutableCurrentList.removeIf { it.id == LOADING || it.id == HEADER }
+
+            val items: List<MovieItem> = when {
+                list.isNullOrEmpty() -> listOf(MovieItem.Exhausted)
+                list.isNotEmpty() -> {
+                  listOf(MovieItem.Header) +  mutableCurrentList + list.map { MovieItem.Data(it) }
+                }
+                else -> { listOf<MovieItem>()}
+            }
+
+            withContext(Dispatchers.Main){
+                submitList(items)
+            }
+        }
+    }
+
+//    fun submit(){
+//        scope.launch {
+//            val mutableCurrentList = currentList.toMutableList()
+//            mutableCurrentList.removeIf { it.id == LOADING }
+//
+//            val items: List<MovieItem> = when {
+//                mutableCurrentList.isEmpty() -> listOf(MovieItem.Exhausted)
+//                else -> {
+//                    //  val mutableCurrentList = currentList.toMutableList()
+//                    //  mutableCurrentList.removeIf { it.id == LOADING }
+//                    listOf(MovieItem.Header) /*+ mutableCurrentList +*/ + list.map { MovieItem.Data(it)
+//                    }
+//                }
+//            }
+//            withContext(Dispatchers.Main){
+//                submitList(items)
+//            }
+//        }
+//    }
 }
 
 class MovieViewHolder(val binding:FragmentMoviesItemBinding, clickPosition: (Int) -> Unit) : RecyclerView.ViewHolder(binding.root){
@@ -102,6 +145,9 @@ class MovieDiffCallback: ItemCallback<MovieItem>(){
     }
 
     override fun areContentsTheSame(oldItem: MovieItem, newItem: MovieItem): Boolean {
+        if(oldItem is MovieItem.Data && newItem is MovieItem.Data){
+            return oldItem.data == newItem.data
+        }
         return oldItem == newItem
     }
 }

@@ -9,30 +9,59 @@ import com.jvoyatz.movierama.domain.models.MovieResults
 import com.jvoyatz.movierama.domain.models.MovieReviews
 import com.jvoyatz.movierama.domain.models.SimilarMovies
 import com.jvoyatz.movierama.domain.repository.MoviesRepository
+import com.jvoyatz.movierama.domain.usecases.SearchForMovies
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onCompletion
 import retrofit2.Response
+import java.net.UnknownHostException
 
 private const val TAG = "MoviesRepositoryImpl"
 
 class MoviesRepositoryImpl(private val moviesApi: MoviesApiService, private val ioDispatcher: CoroutineDispatcher): MoviesRepository {
 
-    override fun getPopularMovies(page: Int): Flow<Resource<MovieResults>> {
+    private var popularMovieResults: MovieResults = MovieResults()
+    private var searchMovieResults: MovieResults = MovieResults()
+
+
+    override fun getPopularMovies(): Flow<Resource<MovieResults>> {
+
+        var nextPage = if( popularMovieResults.page == 0) { 1  }else {
+                popularMovieResults.page + 1
+        }
+
+        if (nextPage > (popularMovieResults.totalPages)){
+            return flow {
+                emit(Resource.Success(popularMovieResults))
+            }
+        }
+
         return apiCallFlow({
-            moviesApi.getPopularMovies()
+            moviesApi.getPopularMovies(page = nextPage)
         }){
-            it.toDomain()
+            popularMovieResults = it.toDomain(popularMovieResults.results)
+            popularMovieResults
         }
     }
 
-    override fun searchMovies(query: String, page: Int):Flow<Resource<MovieResults>> {
+    override fun searchMovies(query: String):Flow<Resource<MovieResults>> {
+        var nextPage = if( searchMovieResults.page == 0) { 1  }else {
+            searchMovieResults.page + 1
+        }
+
+        if (nextPage > (searchMovieResults.totalPages)){
+            return flow {
+                emit(Resource.Success(searchMovieResults))
+            }
+        }
+
         return apiCallFlow({
-            moviesApi.searchMovies(query)
+            moviesApi.searchMovies(query, nextPage)
         }){
-            it.toDomain()
+            searchMovieResults = it.toDomain()
+            searchMovieResults
         }
     }
 
@@ -44,13 +73,13 @@ class MoviesRepositoryImpl(private val moviesApi: MoviesApiService, private val 
         }
     }
 
-    override fun getSimilarMoviesById(id: Int, page: Int):Flow<Resource<SimilarMovies>> {
+    override fun getSimilarMoviesById(id: Int):Flow<Resource<SimilarMovies>> {
         return apiCallFlow({ moviesApi.getSimilarMoviesById(id) }){
             it.toDomain()
         }
     }
 
-    override fun getReviewsById(id: Int, page: Int): Flow<Resource<MovieReviews>> {
+    override fun getReviewsById(id: Int): Flow<Resource<MovieReviews>> {
         return apiCallFlow({
             moviesApi.getReviewsById(id)
         }) {
@@ -58,10 +87,14 @@ class MoviesRepositoryImpl(private val moviesApi: MoviesApiService, private val 
         }
     }
 
+    override fun resetSearchQuery() {
+        searchMovieResults = MovieResults()
+    }
+
     private fun <T, R> apiCallFlow(call: suspend () -> Response<T>?, toDomain: suspend (T) -> R): Flow<Resource<R>> {
         return flow {
-            call()?.let {
-                try {
+            try {
+                call()?.let {
                     when (it.isSuccessful) {
                         true -> {
                             it.body()?.let { body ->
@@ -77,11 +110,12 @@ class MoviesRepositoryImpl(private val moviesApi: MoviesApiService, private val 
                             }
                         }
                     }
-                } catch (e: Exception) {
-                    emit(Resource.Error.create(e))
                 }
+            } catch (e: Exception) {
+               // e.printStackTrace()
+                emit(Resource.Error.create(e))
             }
         }
-            .flowOn(ioDispatcher)
+        .flowOn(ioDispatcher)
     }
 }

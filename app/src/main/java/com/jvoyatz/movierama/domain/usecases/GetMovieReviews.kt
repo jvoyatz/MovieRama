@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 class GetMovieReviews(private val moviesRepository: MoviesRepository) {
 
-    operator fun invoke(movieId: Int, page: Int = 0): Flow<Resource<MovieReviews>> {
-        return moviesRepository.getReviewsById(movieId, page)
+    operator fun invoke(movieId: Int): Flow<Resource<MovieReviews>> {
+        return moviesRepository.getReviewsById(movieId)
     }
 }

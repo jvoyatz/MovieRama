@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.onStart
 
 class SearchForMovies(private val moviesRepository: MoviesRepository) {
     operator fun invoke(query : String, page: Int = 1): Flow<Resource<MovieResults>> {
-        return moviesRepository.searchMovies(query, page)
-            .onStart { emit(Resource.Loading) }
+        return moviesRepository.searchMovies(query)
+            //.onStart { emit(Resource.Loading) }
     }
 }
