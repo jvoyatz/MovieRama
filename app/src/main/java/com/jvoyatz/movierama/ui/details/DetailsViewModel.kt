@@ -11,9 +11,7 @@ import com.jvoyatz.movierama.domain.models.MovieReviews
 import com.jvoyatz.movierama.domain.models.SimilarMovies
 import com.jvoyatz.movierama.domain.usecases.UseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,9 +26,11 @@ class DetailsViewModel @Inject constructor(val useCases: UseCases,
     private val _similarMoviesState: MutableStateFlow<Resource<SimilarMovies>> = MutableStateFlow(Resource.Init)
     val similarMoviesState: StateFlow<Resource<SimilarMovies>> = _similarMoviesState
 
+    private var _favoriteMovieState: MutableSharedFlow<Boolean> = MutableSharedFlow()
+    val favoriteMovieState: SharedFlow<Boolean> = _favoriteMovieState.asSharedFlow()
+
     init {
         stateHandle.get<MovieDetails>("movie")?.let{
-            Log.d(TAG, "${it.id}: ")
             getMoviesReviews(it.id)
             getSimilarMovies(it.id)
         }
@@ -50,6 +50,15 @@ class DetailsViewModel @Inject constructor(val useCases: UseCases,
             useCases.getSimilarMovies(id)
                 .collect {
                     _similarMoviesState.value = it
+                }
+        }
+    }
+
+    fun markMovieAsFavorite(id: Int, name: String){
+        viewModelScope.launch {
+            useCases.markFavoriteMovie(id, name)
+                .collect {
+                    _favoriteMovieState.emit(it)
                 }
         }
     }

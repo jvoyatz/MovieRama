@@ -1,7 +1,6 @@
 package com.jvoyatz.movierama.ui.movies
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,7 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.jvoyatz.movierama.common.Resource
 import com.jvoyatz.movierama.databinding.FragmentMoviesBinding
-import com.jvoyatz.movierama.domain.models.MovieDetails
+import com.jvoyatz.movierama.domain.models.Movie
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +37,16 @@ class MoviesFragment : Fragment() {
     private lateinit var binding: FragmentMoviesBinding
 
     private var isLoading = false;
+
+    var handler = object : Handler {
+        override fun markMovieAsFavorite(/*movie: Movie, */position: Int) {
+
+            val moviesAdapter = binding.moviesRecyclerview.adapter as MoviesAdapter
+            val movie = moviesAdapter.getMovie(position)
+            if(movie.id != 0)
+                moviesViewModel.markMovieAsFavorite(movie.id, movie.title, position)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -61,7 +70,7 @@ class MoviesFragment : Fragment() {
                 }
             }
         })
-        MoviesAdapter(CoroutineScope(Dispatchers.Main)){
+        MoviesAdapter(CoroutineScope(Dispatchers.Main), handler){
             it?.let {
                 moviesViewModel.getMovieDetails(it.id)
             }
@@ -142,6 +151,27 @@ class MoviesFragment : Fragment() {
                             }
                         }
                     }
+                }
+            }
+        }
+
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                moviesViewModel.favoriteMovieState.collectLatest { it ->
+                    it.let { pair ->
+                        if(pair.first){
+                            Toast.makeText(requireContext(), "Movie marked as favorite", Toast.LENGTH_SHORT).show()
+                            val moviesAdapter = binding.moviesRecyclerview.adapter as MoviesAdapter
+                            (moviesAdapter).getMovie(position = pair.second)
+                                ?.let { movie ->
+                                    movie.isFavorite = true
+                                    moviesAdapter.notifyItemChanged(pair.second)
+                                }
+
+                        }
+                    }
+
                 }
             }
         }

@@ -14,4 +14,5 @@ interface MoviesRepository{
     fun getSimilarMoviesById(id:Int):Flow<Resource<SimilarMovies>>
     fun getReviewsById(id: Int):Flow<Resource<MovieReviews>>
     fun resetSearchQuery()
+    suspend fun markFavoriteMovie(id: Int, name: String): Flow<Boolean>
 }

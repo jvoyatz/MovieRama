@@ -1,7 +1,11 @@
 package com.jvoyatz.movierama.di
 
+import android.content.Context
+import androidx.room.Room
 import com.jvoyatz.movierama.common.URL
 import com.jvoyatz.movierama.data.MoviesRepositoryImpl
+import com.jvoyatz.movierama.data.database.MovieDatabase
+import com.jvoyatz.movierama.data.database.MoviesDao
 import com.jvoyatz.movierama.data.network.AuthInterceptor
 import com.jvoyatz.movierama.data.network.MoviesApiService
 import com.jvoyatz.movierama.domain.repository.MoviesRepository
@@ -11,6 +15,7 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +45,22 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 class AppModule {
+
+    @Singleton
+    @Provides
+    fun provideItemsDatabase(@ApplicationContext context: Context): MovieDatabase {
+        return Room.databaseBuilder(
+            context,
+            MovieDatabase::class.java,
+            "movies_database")
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideItemsDao(db: MovieDatabase): MoviesDao {
+        return db.itemsDao
+    }
 
     @Provides
     fun providesMoshi(): Moshi =
@@ -78,8 +99,8 @@ class AppModule {
 
     @Provides
     @Singleton
-    fun provideMoviesRepository(moviesApi: MoviesApiService, ioDispatcher: CoroutineDispatcher):
-            MoviesRepository = MoviesRepositoryImpl(moviesApi, ioDispatcher)
+    fun provideMoviesRepository(moviesApi: MoviesApiService, ioDispatcher: CoroutineDispatcher, moviesDao: MoviesDao):
+            MoviesRepository = MoviesRepositoryImpl(moviesApi, moviesDao, ioDispatcher )
 
     @Singleton
     @Provides
@@ -90,7 +111,8 @@ class AppModule {
             GetMovieDetails(moviesRepository),
             GetSimilarMovies(moviesRepository),
             GetMovieReviews(moviesRepository),
-            ResetSearchQuery(moviesRepository)
+            ResetSearchQuery(moviesRepository),
+            MarkFavoriteMovie(repository = moviesRepository),
         )
     }
 }

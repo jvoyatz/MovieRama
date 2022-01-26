@@ -1,9 +1,7 @@
 package com.jvoyatz.movierama.ui.movies
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.navigation.fragment.DialogFragmentNavigatorDestinationBuilder
 import androidx.recyclerview.widget.DiffUtil.ItemCallback
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -18,6 +16,7 @@ import kotlinx.coroutines.*
 private const val TAG = "MoviesAdapter"
 class MoviesAdapter(
     val scope: CoroutineScope,
+    val handler: Handler,
     val clickListener: (Movie) -> Unit): ListAdapter<MovieItem, RecyclerView.ViewHolder>(MovieDiffCallback()){
 
     override fun getItemViewType(position: Int): Int {
@@ -63,7 +62,7 @@ class MoviesAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         if(holder is MovieViewHolder){
-            holder.bind((getItem(position) as MovieItem.Data).data)
+            holder.bind((getItem(position) as MovieItem.Data).data, handler)
         }
     }
 
@@ -82,6 +81,15 @@ class MoviesAdapter(
                 submitList(items)
             }
         }
+    }
+
+
+    fun getMovie(position: Int): Movie {
+        val item = getItem(position)
+        if(item is MovieItem.Data){
+            return item.data
+        }
+        return Movie()
     }
 
     fun submit(list: List<Movie> = listOf()){
@@ -128,12 +136,15 @@ class MoviesAdapter(
 class MovieViewHolder(val binding:FragmentMoviesItemBinding, clickPosition: (Int) -> Unit) : RecyclerView.ViewHolder(binding.root){
     init {
         itemView.setOnClickListener {
-            clickPosition(adapterPosition)
+            clickPosition(bindingAdapterPosition)
         }
     }
-    fun bind(item: Movie){
+    fun bind(item: Movie, handler: Handler){
         binding.apply {
             this.movie = item
+            this.movieFavorite.setOnClickListener {
+                handler.markMovieAsFavorite(bindingAdapterPosition)
+            }
             executePendingBindings()
         }
     }

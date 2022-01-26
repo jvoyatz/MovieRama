@@ -8,6 +8,10 @@
         <variable
             name="movie"
             type="com.jvoyatz.movierama.domain.models.MovieDetails" />
+
+        <variable
+            name="handler"
+            type="com.jvoyatz.movierama.ui.details.DetailsHandler" />
     </data>
     <ScrollView
         android:layout_width="match_parent"
@@ -98,6 +102,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="16dp"
+                app:isFavorite = "@{movie.favorite}"
+                android:onClick="@{() -> handler.markMovieAsFavorite(movie)}"
                 android:src="@drawable/ic_baseline_favorite_border_24"
                 android:textAppearance="?attr/textAppearanceCaption"
                 app:tint="?attr/colorIcon"

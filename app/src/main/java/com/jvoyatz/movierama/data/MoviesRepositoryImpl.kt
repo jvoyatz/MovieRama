@@ -1,7 +1,8 @@
 package com.jvoyatz.movierama.data
 
-import android.util.Log
 import com.jvoyatz.movierama.common.Resource
+import com.jvoyatz.movierama.data.database.FavoriteMovieEntity
+import com.jvoyatz.movierama.data.database.MoviesDao
 import com.jvoyatz.movierama.data.network.MoviesApiService
 import com.jvoyatz.movierama.data.network.dto.toDomain
 import com.jvoyatz.movierama.domain.models.MovieDetails
@@ -9,18 +10,18 @@ import com.jvoyatz.movierama.domain.models.MovieResults
 import com.jvoyatz.movierama.domain.models.MovieReviews
 import com.jvoyatz.movierama.domain.models.SimilarMovies
 import com.jvoyatz.movierama.domain.repository.MoviesRepository
-import com.jvoyatz.movierama.domain.usecases.SearchForMovies
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.onCompletion
 import retrofit2.Response
-import java.net.UnknownHostException
 
 private const val TAG = "MoviesRepositoryImpl"
 
-class MoviesRepositoryImpl(private val moviesApi: MoviesApiService, private val ioDispatcher: CoroutineDispatcher): MoviesRepository {
+class MoviesRepositoryImpl(
+    private val moviesApi: MoviesApiService,
+    private val moviesDao: MoviesDao,
+    private val ioDispatcher: CoroutineDispatcher): MoviesRepository {
 
     private var popularMovieResults: MovieResults = MovieResults()
     private var searchMovieResults: MovieResults = MovieResults()
@@ -41,7 +42,15 @@ class MoviesRepositoryImpl(private val moviesApi: MoviesApiService, private val 
         return apiCallFlow({
             moviesApi.getPopularMovies(page = nextPage)
         }){
-            popularMovieResults = it.toDomain(popularMovieResults.results)
+
+            val domainModel = it.toDomain(popularMovieResults.results)
+            domainModel.results.forEach { movie ->
+                val favoriteMovie = moviesDao.getFavoriteMovie(movie.id)
+                favoriteMovie?.let {
+                    movie.isFavorite = true
+                }
+            }
+            popularMovieResults = domainModel
             popularMovieResults
         }
     }
@@ -60,7 +69,14 @@ class MoviesRepositoryImpl(private val moviesApi: MoviesApiService, private val 
         return apiCallFlow({
             moviesApi.searchMovies(query, nextPage)
         }){
-            searchMovieResults = it.toDomain()
+            val domainModel = it.toDomain(searchMovieResults.results)
+            domainModel.results.forEach { movie ->
+                val favoriteMovie = moviesDao.getFavoriteMovie(movie.id)
+                favoriteMovie?.let {
+                    movie.isFavorite = true
+                }
+            }
+            searchMovieResults = domainModel
             searchMovieResults
         }
     }
@@ -69,7 +85,11 @@ class MoviesRepositoryImpl(private val moviesApi: MoviesApiService, private val 
         return apiCallFlow({
             moviesApi.getMovieById(id = id)
         }){
-            it.toDomain()
+            val domainModel = it.toDomain()
+            moviesDao.getFavoriteMovie(id)?.let {
+                domainModel.isFavorite = true
+            }
+            domainModel
         }
     }
 
@@ -89,6 +109,19 @@ class MoviesRepositoryImpl(private val moviesApi: MoviesApiService, private val 
 
     override fun resetSearchQuery() {
         searchMovieResults = MovieResults()
+    }
+
+    //1 favorite,
+    //2 not
+    override suspend fun markFavoriteMovie(id: Int, name: String): Flow<Boolean> {
+        return flow {
+            try {
+                moviesDao.insertMovie(FavoriteMovieEntity(id, name))
+                emit(true)
+            } catch (e: Exception) {
+                emit(false)
+            }
+        }.flowOn(ioDispatcher)
     }
 
     private fun <T, R> apiCallFlow(call: suspend () -> Response<T>?, toDomain: suspend (T) -> R): Flow<Resource<R>> {

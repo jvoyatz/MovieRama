@@ -4,7 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.widget.Toolbar
+import android.widget.Toast
+import androidx.databinding.BindingAdapter
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -14,13 +15,17 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.navigation.ui.NavigationUI
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.jvoyatz.movierama.R
 import com.jvoyatz.movierama.common.Resource
 import com.jvoyatz.movierama.databinding.FragmentDetailsBinding
+import com.jvoyatz.movierama.domain.models.Movie
+import com.jvoyatz.movierama.domain.models.MovieDetails
+import com.jvoyatz.movierama.ui.movies.Handler
+import com.jvoyatz.movierama.ui.setFavoriteImage
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -35,6 +40,13 @@ class DetailsFragment @Inject constructor(): Fragment() {
     private lateinit var viewmodel: DetailsViewModel
     private val args: DetailsFragmentArgs by navArgs()
 
+
+    var handler = object : DetailsHandler {
+        override fun markMovieAsFavorite(movie: MovieDetails) {
+            viewmodel.markMovieAsFavorite(movie.id, movie.title)
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -42,6 +54,7 @@ class DetailsFragment @Inject constructor(): Fragment() {
 
         _binding = FragmentDetailsBinding.inflate(inflater, container, false)
         binding.movie = args.movie
+        binding.handler = handler
 
         binding.movieDetailReviewsList.layoutManager = LinearLayoutManager(requireActivity())
         var movieReviewsAdapter = MovieReviewsAdapter(CoroutineScope(Dispatchers.Main))
@@ -95,6 +108,21 @@ class DetailsFragment @Inject constructor(): Fragment() {
                         is Resource.Error -> {
                             adapter.submit(listOf())
                         }
+                    }
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewmodel.favoriteMovieState.collectLatest {
+                    if(it) {
+                        Toast.makeText(
+                            requireContext(),
+                            "Movie marked as favorite",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        setFavoriteImage(binding.movieDetailFavorite, true)
                     }
                 }
             }

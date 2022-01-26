@@ -1,7 +1,6 @@
 package com.jvoyatz.movierama.ui.movies
 
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jvoyatz.movierama.common.Resource
@@ -29,6 +28,8 @@ class MoviesViewModel @Inject constructor(private val useCases: UseCases): ViewM
     private var _moviesDetailsResponse: MutableSharedFlow<Resource<MovieDetails>> = MutableSharedFlow()
     val movieDetailsState: SharedFlow<Resource<MovieDetails>> = _moviesDetailsResponse.asSharedFlow()
 
+    private var _favoriteMovieState: MutableSharedFlow<Pair<Boolean, Int>> = MutableSharedFlow()
+    val favoriteMovieState: SharedFlow<Pair<Boolean, Int>> = _favoriteMovieState.asSharedFlow()
 
     init {
         viewModelScope.launch {
@@ -111,5 +112,13 @@ class MoviesViewModel @Inject constructor(private val useCases: UseCases): ViewM
         }
     }
 
+    fun markMovieAsFavorite(id: Int, name: String, position: Int){
+        viewModelScope.launch {
+            useCases.markFavoriteMovie(id, name)
+                .collect {
+                    _favoriteMovieState.emit(Pair(true, position))
+                }
+        }
+    }
     fun isMoviesLoading(): Boolean = moviesState.value is Resource.Loading
 }

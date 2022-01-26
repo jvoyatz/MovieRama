@@ -86,6 +86,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="4dp"
+                app:isFavorite = "@{movie.favorite}"
+
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="@id/movie_name"
                 app:layout_constraintBottom_toBottomOf="@id/movie_release_date"

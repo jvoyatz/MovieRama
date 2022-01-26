@@ -4,6 +4,7 @@ import android.util.Log
 import android.widget.ImageView
 import android.widget.RatingBar
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.databinding.BindingAdapter
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
@@ -51,5 +52,15 @@ fun setImage(view: ImageView, url: String?){
 fun setRating(view: RatingBar, rating: Double){
     rating?.let {
         view.rating = it.toFloat()
+    }
+}
+
+@BindingAdapter("app:isFavorite")
+fun setFavoriteImage(view: ImageView, isFavorite: Boolean){
+    if(isFavorite){
+        view.setImageDrawable(ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_favorite_24))
+        view.setColorFilter(ContextCompat.getColor(view.context, R.color.red_500), android.graphics.PorterDuff.Mode.SRC_IN);
+    }else{
+        view.setImageDrawable(ContextCompat.getDrawable(view.context, R.drawable.ic_baseline_favorite_border_24))
     }
 }
