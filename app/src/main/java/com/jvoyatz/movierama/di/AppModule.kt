@@ -86,6 +86,7 @@ class AppModule {
     fun providesInteractor(moviesRepository: MoviesRepository): UseCases{
         return UseCases(
             GetPopularMovies(moviesRepository),
+            SearchForMovies(moviesRepository),
             GetMovieDetails(moviesRepository),
             GetSimilarMovies(moviesRepository),
             GetMovieReviews(moviesRepository)

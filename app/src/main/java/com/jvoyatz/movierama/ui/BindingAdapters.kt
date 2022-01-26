@@ -49,7 +49,6 @@ fun setImage(view: ImageView, url: String?){
 
 @BindingAdapter("app:rating")
 fun setRating(view: RatingBar, rating: Double){
-    Log.d(TAG, "setRating() called with: view = $view, rating = $rating")
     rating?.let {
         view.rating = it.toFloat()
     }

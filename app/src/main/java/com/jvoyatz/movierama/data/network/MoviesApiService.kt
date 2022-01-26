@@ -18,7 +18,8 @@ interface MoviesApiService {
     @GET("search/movie")
     suspend fun searchMovies(
         @Query("query") query: String?,
-        @Query("page") page: Int = 1
+        @Query("page") page: Int = 1,
+        @Query("api_key") token:String=TOKEN
     ): Response<MoviesDTO>
 
     @GET("movie/{movie_id}")

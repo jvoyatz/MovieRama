@@ -9,24 +9,52 @@ import com.jvoyatz.movierama.domain.models.MovieDetails
 import com.jvoyatz.movierama.domain.models.MovieResults
 import com.jvoyatz.movierama.domain.usecases.UseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+
 private const val TAG = "MoviesViewModel"
+@ExperimentalCoroutinesApi
 @HiltViewModel
 class MoviesViewModel @Inject constructor(private val useCases: UseCases): ViewModel() {
 
-    private var _popularMoviesResponse: MutableStateFlow<Resource<MovieResults>> = MutableStateFlow(Resource.Init)
-    val popularMoviesState: StateFlow<Resource<MovieResults>> = _popularMoviesResponse
+    private val movieSearchStateFlow = MutableStateFlow("")
+
+    private var _moviesState: MutableStateFlow<Resource<MovieResults>> = MutableStateFlow(Resource.Init)
+    val moviesState: StateFlow<Resource<MovieResults>> = _moviesState
 
     private var _moviesDetailsResponse: MutableStateFlow<Resource<MovieDetails>> = MutableStateFlow(Resource.Init)
     val movieDetailsState: StateFlow<Resource<MovieDetails>> = _moviesDetailsResponse
 
+
     init {
+        viewModelScope.launch {
+            movieSearchStateFlow
+                .flatMapLatest { query ->
+                when(query.isEmpty()){
+                    true -> {
+                        useCases.getPopularMovies()
+                    }
+                    else -> {
+                       useCases.searchForMovies(query)
+                    }
+                }
+            }
+            .onStart {
+                emit(Resource.Loading)
+                delay(1000)
+            }
+            .collect {
+                _moviesState.value = it
+            }
+        }
+    }
+
+
+    fun getPopularMovies(){
         viewModelScope.launch {
             useCases.getPopularMovies()
                 .onStart {
@@ -34,20 +62,25 @@ class MoviesViewModel @Inject constructor(private val useCases: UseCases): ViewM
                 }
                 .collect {
                     it.let {
-                        _popularMoviesResponse.value = it
+                        _moviesState.value = it
                     }
-            }
+                }
         }
     }
 
     fun getMovieDetails(id: Int){
         viewModelScope.launch {
             useCases.getMovieDetails(id)
-                .onStart {  }
-                .collect {
-                    Log.d(TAG, "getMovieDetails: $it")
+                //.onStart {//SHOW LOADING}
+                .collectLatest{
                     _moviesDetailsResponse.value = it
                 }
+        }
+    }
+
+    fun searchForMovies(query: String?) {
+        query?.let {
+            movieSearchStateFlow.value = it
         }
     }
 }

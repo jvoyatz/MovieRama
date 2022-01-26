@@ -9,9 +9,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 
 
-class GetPopularMovies(private val moviesRepository: MoviesRepository) {
-    operator fun invoke(page: Int = 1): Flow<Resource<MovieResults>> {
-        return moviesRepository.getPopularMovies(page)
+class SearchForMovies(private val moviesRepository: MoviesRepository) {
+    operator fun invoke(query : String, page: Int = 1): Flow<Resource<MovieResults>> {
+        return moviesRepository.searchMovies(query, page)
             .onStart { emit(Resource.Loading) }
     }
 }
