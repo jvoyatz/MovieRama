@@ -9,4 +9,7 @@
     <string name="cast">Cast</string>
     <string name="similar_movies">Similar Movies</string>
     <string name="reviews">Reviews</string>
+    <string name="loading">Loading</string>
+    <string name="header_movie_results">Movies Found</string>
+    <string name="header_movies_exhausted">No results</string>
 </resources>

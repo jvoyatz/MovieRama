@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
+    <data>
+        <variable
+            name="movie"
+            type="com.jvoyatz.movierama.domain.models.SimilarMovie" />
+    </data>
 
     <com.google.android.material.card.MaterialCardView
         android:layout_width="110dp"
@@ -12,7 +18,10 @@
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@drawable/ic_baseline_favorite_border_24"/>
+            android:scaleType="fitXY"
+            android:adjustViewBounds="true"
+            app:imgUrl="@{movie.posterPath}"
+            tools:src="@drawable/ic_baseline_favorite_border_24"/>
     </com.google.android.material.card.MaterialCardView>
 
 </layout>

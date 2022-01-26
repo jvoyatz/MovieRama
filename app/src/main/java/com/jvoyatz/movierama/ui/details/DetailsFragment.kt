@@ -4,58 +4,105 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import androidx.appcompat.widget.Toolbar
-import androidx.core.view.WindowCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.fragment.navArgs
 import androidx.navigation.ui.NavigationUI
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.jvoyatz.movierama.R
+import com.jvoyatz.movierama.common.Resource
+import com.jvoyatz.movierama.databinding.FragmentDetailsBinding
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [DetailsFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-class DetailsFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+@AndroidEntryPoint
+class DetailsFragment @Inject constructor(): Fragment() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+    private var _binding: FragmentDetailsBinding? = null
+    private val binding
+        get() = _binding!!
+
+    private lateinit var viewmodel: DetailsViewModel
+    private val args: DetailsFragmentArgs by navArgs()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_details, container, false)
+    ): View {
+
+        _binding = FragmentDetailsBinding.inflate(inflater, container, false)
+        binding.movie = args.movie
+
+        binding.movieDetailReviewsList.layoutManager = LinearLayoutManager(requireActivity())
+        var movieReviewsAdapter = MovieReviewsAdapter(CoroutineScope(Dispatchers.Main))
+        binding.movieDetailReviewsList.adapter = movieReviewsAdapter
+        var similarMoviesAdapter = SimilarMoviesAdapter(CoroutineScope(Dispatchers.Main))
+        binding.movieDetailSimilarList.adapter = similarMoviesAdapter
+
+        viewmodel = ViewModelProvider(this).get(DetailsViewModel::class.java)
+
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val navController = findNavController()
 
-      //  requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        NavigationUI.setupWithNavController(binding.toolbar, navController)
 
-        var toolbar: Toolbar = view.findViewById<Toolbar>(R.id.toolbar)
-        NavigationUI.setupWithNavController(toolbar, navController)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewmodel.similarMoviesState.collect {
+                    val adapter =
+                        binding.movieDetailSimilarList.adapter as SimilarMoviesAdapter
+                    when(it){
+                        is Resource.Success -> {
+                            adapter.submit(it.data.similarMovies)
+                        }
+                        is Resource.Loading -> {
+                            adapter.submitLoading()
+                        }
+                        is Resource.Error -> {
+                            adapter.submit(listOf())
+                        }
+                    }
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewmodel.reviewsState.collect {
+                    val adapter =
+                        binding.movieDetailReviewsList.adapter as MovieReviewsAdapter
+                    when(it){
+                        is Resource.Success -> {
+                            adapter.submit(it.data.movieReview)
+                        }
+                        is Resource.Loading -> {
+                            adapter.submitLoading()
+                        }
+                        is Resource.Error -> {
+                            adapter.submit(listOf())
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    override fun onDetach() {
-        super.onDetach()
-       // requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

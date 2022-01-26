@@ -60,6 +60,5 @@
 
         <item name="colorIcon">@color/grey_blue_700</item>
         <item name="colorIconVariant">@color/darkgoldenrod_700</item>
-
     </style>
 </resources>
