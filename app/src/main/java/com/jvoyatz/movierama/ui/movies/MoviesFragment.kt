@@ -14,11 +14,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.Navigation
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.jvoyatz.movierama.common.Resource
 import com.jvoyatz.movierama.databinding.FragmentMoviesBinding
+import com.jvoyatz.movierama.domain.models.MovieDetails
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -120,13 +122,17 @@ class MoviesFragment : Fragment() {
             }
         }
 
+        val navController = Navigation.findNavController(requireView())
+
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED){
                 moviesViewModel.movieDetailsState.collectLatest {
                     it?.let {
                         when(it){
                             is Resource.Success -> {
-                                findNavController().navigate(MoviesFragmentDirections.actionMoviesFragmentToDetailsFragment(it.data))
+                                if (findNavController().currentDestination?.id == com.jvoyatz.movierama.R.id.moviesFragment) {
+                                    navController.navigate(MoviesFragmentDirections.actionMoviesFragmentToDetailsFragment(it.data))
+                                }
                             }
                             is Resource.Loading -> {
 

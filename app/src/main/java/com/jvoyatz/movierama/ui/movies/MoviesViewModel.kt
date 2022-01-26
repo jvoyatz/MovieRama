@@ -26,8 +26,8 @@ class MoviesViewModel @Inject constructor(private val useCases: UseCases): ViewM
     private var _moviesState: MutableStateFlow<Resource<MovieResults>> = MutableStateFlow(Resource.Init)
     val moviesState: StateFlow<Resource<MovieResults>> = _moviesState
 
-    private var _moviesDetailsResponse: MutableStateFlow<Resource<MovieDetails>> = MutableStateFlow(Resource.Init)
-    val movieDetailsState: StateFlow<Resource<MovieDetails>> = _moviesDetailsResponse
+    private var _moviesDetailsResponse: MutableSharedFlow<Resource<MovieDetails>> = MutableSharedFlow()
+    val movieDetailsState: SharedFlow<Resource<MovieDetails>> = _moviesDetailsResponse.asSharedFlow()
 
 
     init {
@@ -51,6 +51,7 @@ class MoviesViewModel @Inject constructor(private val useCases: UseCases): ViewM
                 _moviesState.value = it
             }
         }
+
     }
 
     fun getMoviesNextPage(){
@@ -93,7 +94,10 @@ class MoviesViewModel @Inject constructor(private val useCases: UseCases): ViewM
             useCases.getMovieDetails(id)
                 //.onStart { delay(450)}
                 .collectLatest{
-                    _moviesDetailsResponse.value = it
+                   // _moviesDetailsResponse.value = it
+                    viewModelScope.launch {
+                        _moviesDetailsResponse.emit(it)
+                    }
                 }
         }
     }
